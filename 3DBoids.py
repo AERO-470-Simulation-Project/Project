@@ -37,4 +37,13 @@ class Flock:
 
 # Example usage
 flock = Flock(num_boids=50)
-flock.plot()
+
+stop_simulation = False
+while not stop_simulation:
+    flock.update()
+    flock.plot()
+
+    # Check for user input to stop the simulation
+    user_input = input("Press 's' to stop the simulation: ")
+    if user_input.lower() == 's':
+        stop_simulation = True
