@@ -15,4 +15,27 @@ The simulation will happen in a limited 3D space for a limited duration of time.
 **Results**
 **Conclusion**
 
-This 
+**Danilo's Problem Statement**
+
+Design boids algorith that allows the individual control of each these parameters
+
+Variable (Tailorable):
+
+- Separation
+
+- Alignment
+
+- Cohesion
+    - Visual range
+
+- Object avoidance
+
+- Predator
+    - Chase boids, maybe pick an individual boid
+    - Optional: allow user to control predator
+
+Constants:
+
+- 3D
+
+- Voids are turned in their velocity vector direction
