@@ -5,7 +5,7 @@ import vpython as vp
 np.random.seed(0)
 
 # Create a flock of boids
-flock = dcBoid.BoidFlock(1, 20, cohesion=0.01, alignment=3, separation=0.5)
+flock = dcBoid.BoidFlock(3, 20, cohesion=0.01, alignment=3, separation=0.5)
 
 # Simluation:
 
@@ -28,6 +28,11 @@ vp.scene.height = 1000
 for i in range(numSteps):
     flock.stepBoid()  # Update positions and velocities
 
+    for hawk in flock.hawks:
+        caught_boid_index = hawk.killBoid(flock)
+        if caught_boid_index != -1:
+            flock.removeBoid(caught_boid_index)
+
     # Update boid visualization
     for j in range(flock.numBoids):
         if i == 0:  # Initialize spheres for boids
@@ -41,6 +46,7 @@ for i in range(numSteps):
             hawkObs.append(vp.sphere(pos=vp.vector(flock.allHawkPositions[i, k, 0], flock.allHawkPositions[i, k, 1], flock.allHawkPositions[i, k, 2]), radius=flock.hawks[k].size, color=vp.color.orange))
         else:
             hawkObs[k].pos = vp.vector(flock.allHawkPositions[i, k, 0], flock.allHawkPositions[i, k, 1], flock.allHawkPositions[i, k, 2])
+    
 
 
 print(flock.allPositions[0, :, :])

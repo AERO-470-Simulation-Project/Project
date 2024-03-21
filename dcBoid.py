@@ -87,6 +87,15 @@ class BoidFlock:
         self.step += 1
 
 
+    def removeBoid(self, index):
+        if 0 <= index < len(self.boids):
+            # Remove boid from lists and update the total count
+            del self.boids[index]
+            self.allPositions = np.delete(self.allPositions, index, axis=1)
+            self.allUnitVeloc = np.delete(self.allUnitVeloc, index, axis=1)
+            self.numBoids -= 1
+
+
         
 
 
@@ -232,18 +241,22 @@ class HawkBoid:
         self.position = position
         self.velocity = velocity
         self.hawkboidID = hawkboidID
-        self.huntingRadius = 100
+        self.huntingRadius = 50
         self.speed = 0.75
         self.size = 2
 
     # Methods
     def detectPrey(self, boidFlock: 'BoidFlock'):
-        # Return the index of the prey boid
-        for i in range(boidFlock.numBoids):
+        closest_boid_index = -1
+        min_distance = self.huntingRadius  # Initialize with the maximum search radius
+
+        for i, boid in enumerate(boidFlock.boids):
             distance = np.linalg.norm(boidFlock.allPositions[boidFlock.step, i, :] - self.position)
-            if distance < self.huntingRadius:
-                return i
-        return -1
+            if distance < min_distance:
+                closest_boid_index = i
+                min_distance = distance
+
+        return closest_boid_index
     
     def movement(self, boidFlock: 'BoidFlock'):
         # Return the next position of the boid and unit vector of the next velocity
@@ -266,9 +279,19 @@ class HawkBoid:
             if dist2Prey < self.size:
                 newPosition = self.position
             else:
-                newPosition = self.position + self.speed * vec2PreyUnit
+                newPosition = self.position + self.speed * vec2PreyUnit * boidFlock.dt
 
             return newPosition, vec2PreyUnit
+        
+    def killBoid(self, boidFlock: 'BoidFlock'):
+        # Return the index of the prey boid
+        for i in range(boidFlock.numBoids):
+            distance = np.linalg.norm(boidFlock.allPositions[boidFlock.step, i, :] - self.position)
+            if distance < self.size:
+                return i
+        return -1
+        
+
 
 
 
