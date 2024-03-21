@@ -259,29 +259,41 @@ class HawkBoid:
         return closest_boid_index
     
     def movement(self, boidFlock: 'BoidFlock'):
-        # Return the next position of the boid and unit vector of the next velocity
-
+        # Calculate the separation vector to avoid other hawks
+        separation_vector = self.separation(boidFlock, min_separation_distance=10)
+        # You may adjust min_separation_distance based on your simulation's scale
+    
         # Find the prey
         preyIndex = self.detectPrey(boidFlock)
-
-        # If there is no prey, move randomly
+    
+        # Define a vector that will influence the hawk's new direction
+        direction_vector = np.array([0.0, 0.0, 0.0])
+    
         if preyIndex == -1:
-            newPosition = self.position + self.speed * self.velocity
-            return newPosition, self.velocity
-
-        # If there is a prey, move towards it
+            # No prey found, move randomly but consider separation
+            direction_vector = self.velocity + separation_vector
         else:
+            # Prey found, calculate vector towards prey and consider separation
             preyPosition = boidFlock.allPositions[boidFlock.step, preyIndex, :]
             vec2Prey = preyPosition - self.position
-            dist2Prey = np.linalg.norm(vec2Prey)
-            vec2PreyUnit = vec2Prey / dist2Prey
+            vec2PreyUnit = vec2Prey / np.linalg.norm(vec2Prey)
+        
+            direction_vector = vec2PreyUnit + separation_vector
+    
+        # Normalize the direction vector to ensure consistent speed
+        if np.linalg.norm(direction_vector) > 0:
+            direction_vector /= np.linalg.norm(direction_vector)
+    
+        # Calculate new position and velocity based on direction_vector
+        newVelocity = direction_vector * self.speed
+        newPosition = self.position + newVelocity * boidFlock.dt
 
-            if dist2Prey < self.size:
-                newPosition = self.position
-            else:
-                newPosition = self.position + self.speed * vec2PreyUnit * boidFlock.dt
+        # Ensure the hawk doesn't phase into prey immediately by stopping at prey's position
+        if preyIndex != -1 and np.linalg.norm(vec2Prey) < self.size:
+            newPosition = self.position  # Hawk stops moving if it's close enough to catch prey
+    
+        return newPosition, newVelocity
 
-            return newPosition, vec2PreyUnit
         
     def killBoid(self, boidFlock: 'BoidFlock'):
         # Return the index of the prey boid
@@ -290,6 +302,26 @@ class HawkBoid:
             if distance < self.size:
                 return i
         return -1
+    
+    def separation(self, boidFlock: 'BoidFlock', min_separation_distance):
+
+        move_away = np.array([0.0, 0.0, 0.0])
+        nearby_hawks = 0
+
+        for other_hawk in boidFlock.hawks:
+            if other_hawk is not self:
+                distance = np.linalg.norm(other_hawk.position - self.position)
+                if distance < min_separation_distance:
+                    # Calculate vector pointing away from the nearby hawk
+                    move_away += self.position - other_hawk.position
+                    nearby_hawks += 1
+
+        if nearby_hawks > 0:
+            move_away /= nearby_hawks  # Average the move away direction
+            # Normalize the move away vector
+            move_away /= np.linalg.norm(move_away)
+
+        return move_away
         
 
 
