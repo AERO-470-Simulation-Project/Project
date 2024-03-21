@@ -3,8 +3,9 @@ import numpy as np
 
 class BoidFlock:
 
-    def __init__(self, num_boids, cohesion = 0, alignment = 0, separation = 0, speed = 1, dt = 1/6):
+    def __init__(self, num_hawks, num_boids, cohesion = 0, alignment = 0, separation = 0, speed = 1, dt = 1/6):
         self.boids = []
+        self.hawks = []
         self.step = 0
         self.dt = dt
 
@@ -25,6 +26,10 @@ class BoidFlock:
         # Initialize the array to store all the velocities of the boids
         self.allUnitVeloc = np.full((self.simStepsPerMemAlloc, num_boids, self.numDim), np.nan)
 
+        # Initialize array for Hawks Position and Velocity
+        self.allHawkPositions = np.full((self.simStepsPerMemAlloc, num_hawks, self.numDim), np.nan)
+        self.allHawkVelocities = np.full((self.simStepsPerMemAlloc, num_hawks, self.numDim), np.nan)
+
         # Rows are time steps, columns are boids, and depth is x, y, z
 
         # Add all the boids to the flock
@@ -39,21 +44,45 @@ class BoidFlock:
 
         self.numBoids = num_boids
 
+        for i in range(num_hawks):
+            hawkPosition = np.random.uniform(self.cubeC1, self.cubeC2)
+            self.allHawkPositions[0, i, :] = hawkPosition
+
+            hawkVelocity = np.random.uniform(0, 1, self.numDim)
+            self.allHawkVelocities[0, i, :] = hawkVelocity/np.linalg.norm(hawkVelocity)
+
+            self.hawks.append(HawkBoid(hawkPosition, hawkVelocity, i))
+
+        self.numHawks = num_hawks
+
     def stepBoid(self):
 
         # Check if the arrays need to be expanded
         if self.step == self.allPositions.shape[0] - 1:
             self.allPositions = np.append(self.allPositions, np.full((self.simStepsPerMemAlloc, self.numBoids, self.numDim), np.nan), axis = 0)
-            self.allUnitVeloc = np.append(self.allUnitVeloc, np.full((self.simStepsPerMemAlloc, self.numBoids, self.numDim), np.nan), axis = 0)        
+            self.allUnitVeloc = np.append(self.allUnitVeloc, np.full((self.simStepsPerMemAlloc, self.numBoids, self.numDim), np.nan), axis = 0)      
+
+        if self.step == self.allHawkPositions.shape[0] - 1:
+            self.allHawkPositions = np.append(self.allHawkPositions, np.full((self.simStepsPerMemAlloc, self.numHawks, self.numDim), np.nan), axis = 0)
+            self.allHawkVelocities = np.append(self.allHawkVelocities, np.full((self.simStepsPerMemAlloc, self.numHawks, self.numDim), np.nan), axis = 0)  
         
         # Move all the boids
         for i in range(self.numBoids):
             self.allPositions[self.step + 1, i, :], self.allUnitVeloc[self.step + 1, i, :] = self.boids[i].movement(self)
 
+        # Move all the hawks
+        for i in range(self.numHawks):
+            self.allHawkPositions[self.step + 1, i, :], self.allHawkVelocities[self.step + 1, i, :] = self.hawks[i].movement(self)
+
         # Update boid states
         for i in range(self.numBoids):
             self.boids[i].position = self.allPositions[self.step + 1, i, :]
             self.boids[i].velocity = self.allUnitVeloc[self.step + 1, i, :]
+
+        # Update hawk states
+        for i in range(self.numHawks):
+            self.hawks[i].position = self.allHawkPositions[self.step + 1, i, :]
+            self.hawks[i].velocity = self.allHawkVelocities[self.step + 1, i, :]
 
         self.step += 1
 
@@ -196,6 +225,53 @@ class Boid:
         return newPosition, newVelocity
     
     
+class HawkBoid:
+
+     # Attirbutes:
+    def __init__(self, position:'np.ndarray', velocity:'np.ndarray', hawkboidID) -> None:
+        self.position = position
+        self.velocity = velocity
+        self.hawkboidID = hawkboidID
+        self.huntingRadius = 100
+        self.speed = 0.75
+        self.size = 2
+
+    # Methods
+    def detectPrey(self, boidFlock: 'BoidFlock'):
+        # Return the index of the prey boid
+        for i in range(boidFlock.numBoids):
+            distance = np.linalg.norm(boidFlock.allPositions[boidFlock.step, i, :] - self.position)
+            if distance < self.huntingRadius:
+                return i
+        return -1
+    
+    def movement(self, boidFlock: 'BoidFlock'):
+        # Return the next position of the boid and unit vector of the next velocity
+
+        # Find the prey
+        preyIndex = self.detectPrey(boidFlock)
+
+        # If there is no prey, move randomly
+        if preyIndex == -1:
+            newPosition = self.position + self.speed * self.velocity
+            return newPosition, self.velocity
+
+        # If there is a prey, move towards it
+        else:
+            preyPosition = boidFlock.allPositions[boidFlock.step, preyIndex, :]
+            vec2Prey = preyPosition - self.position
+            dist2Prey = np.linalg.norm(vec2Prey)
+            vec2PreyUnit = vec2Prey / dist2Prey
+
+            if dist2Prey < self.size:
+                newPosition = self.position
+            else:
+                newPosition = self.position + self.speed * vec2PreyUnit
+
+            return newPosition, vec2PreyUnit
+
+
+
 
 
 
