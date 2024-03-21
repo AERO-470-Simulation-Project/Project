@@ -115,7 +115,7 @@ class Boid:
 
             sepProp = 5
             if dist2Average < self.size * sepProp:
-                priority = 1/(dist2Average / sepProp)
+                priority = 1/(dist2Average / sepProp)**2
             else:
                 priority = 0
 
