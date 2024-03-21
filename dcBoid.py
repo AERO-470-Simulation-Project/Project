@@ -137,21 +137,25 @@ class Boid:
     
     def separationF(self, boidFlock: 'BoidFlock', boidsInRadius):
         if len(boidsInRadius) > 0:
-            averagePosition = np.mean(boidFlock.allPositions[boidFlock.step, boidsInRadius, :], axis = 0)
-            vec2Average = averagePosition - self.position
-            dist2Average = np.linalg.norm(vec2Average)
-            vec2AvUnit = vec2Average / dist2Average
+            # Find the vector to the boid from the other boids in radius
+            vecFromBoids = self.position - boidFlock.allPositions[boidFlock.step, boidsInRadius, :]
+            dist2Boids = np.linalg.norm(vecFromBoids, axis = 1) # I don't know what this axis does
+            vecFromBoidsUnit = vecFromBoids / dist2Boids[:, None] # This None is to conver the dist2Boids to a column vector
+            weights = 2 / dist2Boids**(2)
+            vecFromBoidsResized = vecFromBoidsUnit * weights[:, None]
 
-            sepProp = 5
-            if dist2Average < self.size * sepProp:
-                priority = 1/(dist2Average / sepProp)**2
-            else:
-                priority = 0
+            # sepProp = 5
+            # if dist2Average < self.size * sepProp:
+            #     priority = 1/(dist2Average / sepProp)**2
+            # else:
+            #     priority = 0
 
-            planeNormal = np.cross(vec2AvUnit, self.velocity)
-            avoidanceVector = np.cross(planeNormal, vec2AvUnit)
-            avoidanceVector = priority * avoidanceVector / np.linalg.norm(avoidanceVector)
-            return avoidanceVector
+            avoidanceVector = np.sum(vecFromBoidsResized, axis = 0)
+            currentVelocity = self.velocity
+            newVelocity = currentVelocity + avoidanceVector
+            newVelocityUnit = newVelocity / np.linalg.norm(newVelocity)
+            separationVector = newVelocityUnit * self.speed
+            return separationVector
             
         else:
             return np.array([0,0,0])

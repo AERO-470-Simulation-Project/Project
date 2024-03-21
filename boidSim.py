@@ -5,7 +5,7 @@ import vpython as vp
 np.random.seed(0)
 
 # Create a flock of boids
-flock = dcBoid.BoidFlock(1, 20, cohesion=0.01, alignment=3, separation=0.5)
+flock = dcBoid.BoidFlock(1, 20, cohesion=0.05, alignment=2, separation=0.1)
 
 # Simluation:
 
