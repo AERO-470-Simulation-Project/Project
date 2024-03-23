@@ -6,7 +6,7 @@ import dcBoidShapes
 np.random.seed(0)
 
 # Create a flock of boids
-flock = dcBoid.BoidFlock(1, 20, cohesion=0.05, alignment=2, separation=0.1)
+flock = dcBoid.BoidFlock(1, 20, cohesion=.085, alignment=1, separation=0.1)
 
 # Simluation:
 
@@ -27,17 +27,20 @@ vp.scene.width = 1000
 vp.scene.height = 1000
 
 for i in range(numSteps):
-    flock.stepBoid()  # Update positions and velocities
 
     for hawk in flock.hawks:
         caught_boid_index = hawk.killBoid(flock)
         if caught_boid_index != -1:
             flock.removeBoid(caught_boid_index)
 
+    flock.stepBoid()  # Update positions and velocities
+
+    
+
     # Update boid visualization
     for j in range(flock.numBoids):
         if i == 0:  # Initialize spheres for boids
-            boidObs.append(dcBoidShapes.BoidShape(flock.allPositions[i, j, :], flock.allUnitVeloc[i, j, :], size=4, color=vp.color.blue))
+            boidObs.append(dcBoidShapes.BoidShape(flock.allPositions[i, j, :], flock.allUnitVeloc[i, j, :], size=4, color=vp.color.red))
         else:
             boidObs[j].pos = boidObs[j].moveBoid(flock.allPositions[i, j, :], flock.allUnitVeloc[i, j, :])
     

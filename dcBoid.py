@@ -94,6 +94,10 @@ class BoidFlock:
             self.allPositions = np.delete(self.allPositions, index, axis=1)
             self.allUnitVeloc = np.delete(self.allUnitVeloc, index, axis=1)
             self.numBoids -= 1
+            # Change boid IDs to reflect the new order
+            for boidY in self.boids:
+                if boidY.boidID > index:
+                    boidY.boidID -= 1
 
 
         
@@ -246,7 +250,7 @@ class HawkBoid:
         self.velocity = velocity
         self.hawkboidID = hawkboidID
         self.huntingRadius = 50
-        self.speed = 0.75
+        self.speed = 0.90
         self.size = 2
 
     # Methods
